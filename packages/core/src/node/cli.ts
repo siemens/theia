@@ -25,32 +25,52 @@ export const CliContribution = Symbol('CliContribution');
  * Call back for extension to contribute options to the cli.
  */
 export interface CliContribution {
-    configure(conf: yargs.Argv): void;
+    /**
+     * Configure the `yargs.Argv` parser with your options.
+     */
+    configure(conf: yargs.Argv): MaybePromise<void>;
+    /**
+     * Fetch the parsed options.
+     */
     setArguments(args: yargs.Arguments): MaybePromise<void>;
 }
 
 @injectable()
 export class CliManager {
 
-    constructor(@inject(ContributionProvider) @named(CliContribution)
-    protected readonly contributionsProvider: ContributionProvider<CliContribution>) { }
+    protected readonly parser: yargs.Argv;
 
-    async initializeCli(argv: string[]): Promise<void> {
+    constructor(
+        @inject(ContributionProvider) @named(CliContribution)
+        protected readonly contributionsProvider: ContributionProvider<CliContribution>,
+    ) {
         const pack = require('../../package.json');
-        const version = pack.version;
-        const command = yargs.version(version);
-        command.exitProcess(this.isExit());
-        for (const contrib of this.contributionsProvider.getContributions()) {
-            contrib.configure(command);
-        }
-        const args = command
+        this.parser = yargs
+            .version(pack.version)
+            .exitProcess(this.isExit())
             .detectLocale(false)
             .showHelpOnFail(false, 'Specify --help for available options')
-            .help('help')
-            .parse(argv);
+            .help('help');
+    }
+
+    async parse(argv: string[]): Promise<yargs.Arguments> {
+        return this.parser.parse(argv);
+    }
+
+    async initializeCli(argv: string[]): Promise<void> {
+        const promises = [];
         for (const contrib of this.contributionsProvider.getContributions()) {
-            await contrib.setArguments(args);
+            promises.push(contrib.configure(this.parser));
         }
+        await Promise.all(promises);
+
+        const args = await this.parse(argv);
+
+        promises.length = 0;
+        for (const contrib of this.contributionsProvider.getContributions()) {
+            promises.push(contrib.setArguments(args));
+        }
+        await Promise.all(promises);
     }
 
     protected isExit(): boolean {

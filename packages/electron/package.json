@@ -20,6 +20,9 @@
     "electron-codecs-test": "electron-codecs-test.js",
     "electron-replace-ffmpeg": "electron-replace-ffmpeg.js"
   },
+  "peerDependencies": {
+    "@theia/core": "<1"
+  },
   "dependencies": {
     "electron": "^4.2.11",
     "electron-download": "^4.1.1",
@@ -33,5 +36,10 @@
   "scripts": {
     "postinstall": "node scripts/post-install.js",
     "test": "mocha \"tests/**/*.spec.js\""
-  }
+  },
+  "theiaExtensions": [
+    {
+      "electronMain": "lib/electron-main/electron-main-module"
+    }
+  ]
 }
