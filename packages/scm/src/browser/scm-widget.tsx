@@ -454,7 +454,7 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
             onMouseEnter={this.showHover}
             onMouseLeave={this.hideHover}
             ref={this.detectHover}
-            onClick={this.selectChange}
+            onClick={this.open}
             onDoubleClick={this.open}>
             <div className='noWrapInfo' >
                 <span className={icon + ' file-icon'} />
